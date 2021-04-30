@@ -4,6 +4,7 @@ using RuriLib.Proxies;
 using RuriLib.Proxies.Clients;
 using System;
 using System.Net;
+using System.Runtime.InteropServices;
 using System.Security.Authentication;
 
 namespace RuriLib.Functions.Http
@@ -22,7 +23,8 @@ namespace RuriLib.Functions.Http
                 SslProtocols = ToSslProtocols(options.SecurityProtocol),
                 UseCustomCipherSuites = options.UseCustomCipherSuites,
                 AllowedCipherSuites = options.CustomCipherSuites,
-                CertRevocationMode = options.CertRevocationMode
+                CertRevocationMode = options.CertRevocationMode,
+                ReadResponseContent = options.ReadResponseContent
             };
         }
 
@@ -37,7 +39,8 @@ namespace RuriLib.Functions.Http
                 SslProtocols = ToSslProtocols(options.SecurityProtocol),
                 UseCustomCipherSuites = options.UseCustomCipherSuites,
                 AllowedCipherSuites = options.CustomCipherSuites,
-                CertRevocationMode = options.CertRevocationMode
+                CertRevocationMode = options.CertRevocationMode,
+                ReadResponseContent = options.ReadResponseContent
             };
         }
 
@@ -82,6 +85,11 @@ namespace RuriLib.Functions.Http
         /// </summary>
         private static SslProtocols ToSslProtocols(SecurityProtocol protocol)
         {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && protocol == SecurityProtocol.TLS13)
+            {
+                throw new Exception("To use TLS 1.3 on Windows please use the SystemDefault option");
+            }
+
             return protocol switch
             {
                 SecurityProtocol.SystemDefault => SslProtocols.None,

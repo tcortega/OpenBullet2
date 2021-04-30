@@ -248,6 +248,40 @@ namespace RuriLib.Blocks.Puppeteer.Page
             return json;
         }
 
+        [Block("Captures the response from the given URL", name = "Wait for Response")]
+        public static async Task PuppeteerWaitForResponse(BotData data, string url, int timeoutMilliseconds = 60000)
+        {
+            data.Logger.LogHeader();
+
+            var page = GetPage(data);
+            var options = new WaitForOptions
+            {
+                Timeout = timeoutMilliseconds
+            };
+
+            var response = await page.WaitForResponseAsync(url, options);
+
+            data.ADDRESS = response.Url;
+            data.RESPONSECODE = (int)response.Status;
+            data.HEADERS = response.Headers;
+
+            // On 3xx puppeteer returns a body missing exception
+            if (((int)response.Status) / 100 != 3)
+            {
+                data.SOURCE = await response.TextAsync();
+                data.RAWSOURCE = await response.BufferAsync();
+            }
+
+            data.Logger.Log($"Address: {data.ADDRESS}", LogColors.DodgerBlue);
+            data.Logger.Log($"Response code: {data.RESPONSECODE}", LogColors.Citrine);
+
+            data.Logger.Log("Received Headers:", LogColors.MediumPurple);
+            data.Logger.Log(data.HEADERS.Select(h => $"{h.Key}: {h.Value}"), LogColors.Violet);
+
+            data.Logger.Log("Received Payload:", LogColors.ForestGreen);
+            data.Logger.Log(data.SOURCE, LogColors.GreenYellow, true);
+        }
+
         private static PuppeteerSharp.Page GetPage(BotData data)
             => (PuppeteerSharp.Page)data.Objects["puppeteerPage"] ?? throw new Exception("No pages open!");
 

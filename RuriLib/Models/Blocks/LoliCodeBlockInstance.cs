@@ -46,7 +46,7 @@ namespace RuriLib.Models.Blocks
                 // Try to read it as a LoliCode-exclusive statement
                 try
                 {
-                    writer.WriteLine(TranspileStatement(trimmedLine));
+                    writer.WriteLine(TranspileStatement(trimmedLine, definedVariables));
                 }
 
                 // If it failed, we assume what is written is bare C# so we just copy it over (untrimmed)
@@ -59,7 +59,7 @@ namespace RuriLib.Models.Blocks
             return writer.ToString();
         }
 
-        private string TranspileStatement(string input)
+        private string TranspileStatement(string input, List<string> definedVariables)
         {
             Match match;
 
@@ -190,6 +190,36 @@ namespace RuriLib.Models.Blocks
             if ((match = Regex.Match(input, $"^LOCK (.+)$")).Success)
             {
                 return $"lock({match.Groups[1].Value}){System.Environment.NewLine}{{";
+            }
+
+            // SET VAR
+            // SET VAR myString "hello" => string myString = "hello";
+            if ((match = Regex.Match(input, $"^SET VAR ({validTokenRegex}) (.+)$")).Success)
+            {
+                if (definedVariables.Contains(match.Groups[1].Value))
+                {
+                    return $"{match.Groups[1].Value} = {match.Groups[2].Value};";
+                }
+                else
+                {
+                    definedVariables.Add(match.Groups[1].Value);
+                    return $"string {match.Groups[1].Value} = {match.Groups[2].Value};";
+                }
+            }
+
+            // SET CAP
+            // SET CAP myCapture "hello" => string myString = "hello"; data.MarkForCapture(nameof(myCapture));
+            if ((match = Regex.Match(input, $"^SET CAP ({validTokenRegex}) (.+)$")).Success)
+            {
+                if (definedVariables.Contains(match.Groups[1].Value))
+                {
+                    return $"{match.Groups[1].Value} = {match.Groups[2].Value};{System.Environment.NewLine}data.MarkForCapture(nameof({match.Groups[1].Value}));";
+                }
+                else
+                {
+                    definedVariables.Add(match.Groups[1].Value);
+                    return $"string {match.Groups[1].Value} = {match.Groups[2].Value};{System.Environment.NewLine}data.MarkForCapture(nameof({match.Groups[1].Value}));";
+                }
             }
 
             throw new NotSupportedException();

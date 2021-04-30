@@ -2,6 +2,8 @@
 using RuriLib.Extensions;
 using RuriLib.Logging;
 using RuriLib.Models.Bots;
+using RuriLib.Models.Conditions.Comparisons;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -36,7 +38,8 @@ namespace RuriLib.Blocks.Functions.List
             {
                 var nums = list.Select(e => double.Parse(e, CultureInfo.InvariantCulture)).ToList();
                 nums.Sort();
-                list = nums.Select(e => e.ToString()).ToList();
+                list.Clear();
+                list.AddRange(nums.Select(e => e.ToString()));
             }
             else
             {
@@ -82,7 +85,7 @@ namespace RuriLib.Blocks.Functions.List
         public static void AddToList(BotData data, [Variable] List<string> list, string item, int index = -1)
         {
             if (list.Count == 0) index = 0;
-            else if (index < 0) index += list.Count;
+            else if (index < 0) index += list.Count + 1;
             list.Insert(index, item);
 
             data.Logger.LogHeader();
@@ -94,12 +97,21 @@ namespace RuriLib.Blocks.Functions.List
         public static void RemoveFromList(BotData data, [Variable] List<string> list, int index = 0)
         {
             if (list.Count == 0) index = 0;
-            else if (index < 0) index += list.Count;
-            string removedItem = list[index];
+            else if (index < 0) index += list.Count +1 ;
+            var removedItem = list[index];
             list.RemoveAt(index);
 
             data.Logger.LogHeader();
             data.Logger.Log($"Removed item {removedItem} at index {index}", LogColors.YellowGreen);
+        }
+
+        [Block("Removes all items that match a given condition from a list")]
+        public static void RemoveAllFromList(BotData data, [Variable] List<string> list, StrComparison comparison, string term)
+        {
+            var count = list.RemoveAll(i => RuriLib.Functions.Conditions.Conditions.Check(i, comparison, term));
+
+            data.Logger.LogHeader();
+            data.Logger.Log($"Removed {count} items", LogColors.YellowGreen);
         }
 
         [Block("Removes duplicate items from a list")]
@@ -126,6 +138,27 @@ namespace RuriLib.Blocks.Functions.List
             list.Shuffle(data.Random);
             data.Logger.LogHeader();
             data.Logger.Log("Shuffled the list", LogColors.YellowGreen);
+        }
+
+        [Block("Splits the items of a list to create a dictionary", name = "To Dictionary")]
+        public static Dictionary<string, string> ListToDictionary(BotData data, [Variable] List<string> list,
+            string separator = ":", bool autoTrim = true)
+        {
+            Dictionary<string, string> dict = new();
+
+            foreach (var item in list)
+            {
+                var split = item.Split(separator, 2, autoTrim ? StringSplitOptions.TrimEntries : StringSplitOptions.None);
+
+                if (!string.IsNullOrEmpty(split[0]))
+                {
+                    dict[split[0]] = split[1];
+                }
+            }
+
+            data.Logger.LogHeader();
+            data.Logger.Log("Split the list into a dictionary", LogColors.YellowGreen);
+            return dict;
         }
     }
 }

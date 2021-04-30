@@ -39,11 +39,10 @@ namespace RuriLib.Http
         /// </summary>
         [MethodImpl(methodImplOptions: MethodImplOptions.AggressiveOptimization)]
         async internal Task<HttpResponse> GetResponseAsync(HttpRequest request, Stream stream,
-            CancellationToken cancellationToken = default)
+            bool readResponseContent = true, CancellationToken cancellationToken = default)
         {
           
             reader = PipeReader.Create(stream);
-
 
             response = new HttpResponse
             {
@@ -54,7 +53,7 @@ namespace RuriLib.Http
 
             await ReceiveFirstLineAsync(cancellationToken).ConfigureAwait(false);
             await ReceiveHeadersAsync(cancellationToken).ConfigureAwait(false);
-            await ReceiveContentAsync(cancellationToken).ConfigureAwait(false);
+            await ReceiveContentAsync(readResponseContent, cancellationToken).ConfigureAwait(false);
 
             return response;
         }
@@ -116,7 +115,7 @@ namespace RuriLib.Http
                 {
                     if (ReadHeadersFastPath(ref buff))
                     {
-                        reader.AdvanceTo(buff.Start, buff.End);
+                        reader.AdvanceTo(buff.Start);
                         break;
                     }
 
@@ -125,7 +124,7 @@ namespace RuriLib.Http
                 {
                     if (ReadHeadersSlowerPath(ref buff))
                     {
-                        reader.AdvanceTo(buff.Start, buff.End);
+                        reader.AdvanceTo(buff.Start);
                         break;
                     }
                 }
@@ -259,19 +258,27 @@ namespace RuriLib.Http
             response.Request.Cookies[cookieName] = cookieValue;
         }
 
-        // TODO: Make this async (need to refactor the mess below)
-        private async Task ReceiveContentAsync(CancellationToken cancellationToken = default)
+        private async Task ReceiveContentAsync(bool readResponseContent = true, CancellationToken cancellationToken = default)
         {
             // If there are content headers
             if (contentHeaders.Count != 0)
             {
                 contentLength = GetContentLength();
 
-                // Try to get the body and write it to a MemoryStream
-                var finaleResponceStream = await GetMessageBodySource(cancellationToken).ConfigureAwait(false);
-                // Rewind the stream and set the content of the response and its headers
-                finaleResponceStream.Seek(0, SeekOrigin.Begin);
-                response.Content = new StreamContent(finaleResponceStream);
+                if (readResponseContent)
+                {
+                    // Try to get the body and write it to a MemoryStream
+                    var finaleResponceStream = await GetMessageBodySource(cancellationToken).ConfigureAwait(false);
+
+                    // Rewind the stream and set the content of the response and its headers
+                    finaleResponceStream.Seek(0, SeekOrigin.Begin);
+                    response.Content = new StreamContent(finaleResponceStream);
+                }
+                else
+                {
+                    response.Content = new ByteArrayContent(Array.Empty<byte>());
+                }
+                
                 foreach (var pair in contentHeaders)
                 {
                     response.Content.Headers.TryAddWithoutValidation(pair.Key, pair.Value);

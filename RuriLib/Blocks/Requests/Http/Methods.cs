@@ -385,7 +385,7 @@ namespace RuriLib.Blocks.Requests.Http
             }
             catch (NullReferenceException)
             {
-                // Thrown when there is no content (204)
+                // Thrown when there is no content (204) or we decided to not read it
                 data.RAWSOURCE = Array.Empty<byte>();
             }
 
@@ -402,8 +402,17 @@ namespace RuriLib.Blocks.Requests.Http
 
             // Headers
             data.HEADERS = response.Headers;
+            if (response.Content != null)
+            {
+                foreach (var header in response.Content.Headers)
+                {
+                    data.HEADERS[header.Key] = header.Value.First();
+                }
+            }
+
             if (!data.HEADERS.ContainsKey("Content-Length"))
                 data.HEADERS["Content-Length"] = data.RAWSOURCE.Length.ToString();
+
             data.Logger.Log("Received Headers:", LogColors.MediumPurple);
             data.Logger.Log(data.HEADERS.Select(h => $"{h.Key}: {h.Value}"), LogColors.Violet);
 
@@ -505,6 +514,7 @@ namespace RuriLib.Blocks.Requests.Http
                 UseCustomCipherSuites = options.UseCustomCipherSuites,
                 CustomCipherSuites = ParseCipherSuites(options.CustomCipherSuites),
                 CertRevocationMode = data.Providers.Security.X509RevocationMode,
+                ReadResponseContent = options.ReadResponseContent
             };
     }
 }

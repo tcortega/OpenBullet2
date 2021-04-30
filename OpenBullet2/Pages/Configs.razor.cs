@@ -69,6 +69,7 @@ namespace OpenBullet2.Pages
 
             var client = new GridClient<Config>(q => GetGridRows(columns, q), query, false, "configsGrid", columns, CultureInfo.CurrentCulture)
                 .Sortable()
+                .ExtSortable()
                 .Filterable()
                 .WithMultipleFilters()
                 .SetKeyboard(true)
@@ -78,9 +79,9 @@ namespace OpenBullet2.Pages
             grid = client.Grid;
 
             // Try to set a previous filter
-            if (VolatileSettings.GridQueries.ContainsKey("configsGrid"))
+            if (VolatileSettings.GridQueries.ContainsKey((0, "configsGrid")))
             {
-                grid.Query = VolatileSettings.GridQueries["configsGrid"];
+                grid.Query = VolatileSettings.GridQueries[(0, "configsGrid")];
             }
 
             // Set new items to grid
@@ -91,7 +92,7 @@ namespace OpenBullet2.Pages
         private ItemsDTO<Config> GetGridRows(Action<IGridColumnCollection<Config>> columns,
                 QueryDictionary<StringValues> query)
         {
-            VolatileSettings.GridQueries["configsGrid"] = query;
+            VolatileSettings.GridQueries[(0, "configsGrid")] = query;
 
             var server = new GridServer<Config>(configs, new QueryCollection(query),
                 true, "configsGrid", columns, 10).Sortable().Filterable().WithMultipleFilters();
