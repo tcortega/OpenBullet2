@@ -132,11 +132,8 @@
   <data name="ConfigMissing" xml:space="preserve">
     <value>Impossibile trovare la config con id</value>
   </data>
-  <data name="CopyData" xml:space="preserve">
-    <value>Copia dati</value>
-  </data>
-  <data name="CopyDataCapture" xml:space="preserve">
-    <value>Copia dati + cattura</value>
+  <data name="Copy" xml:space="preserve">
+    <value>Copia</value>
   </data>
   <data name="CopyToClipboardFailed" xml:space="preserve">
     <value>Copia negli appunti fallita</value>
@@ -156,14 +153,20 @@
   <data name="DeleteDuplicates" xml:space="preserve">
     <value>Rimuovi duplicate</value>
   </data>
-  <data name="DeleteFiltered" xml:space="preserve">
-    <value>Rimuovi filtrate</value>
+  <data name="Download" xml:space="preserve">
+    <value>Scarica</value>
   </data>
   <data name="Edit" xml:space="preserve">
     <value>Modifica</value>
   </data>
   <data name="EditHit" xml:space="preserve">
     <value>Modifica hit</value>
+  </data>
+  <data name="ExecuteOn" xml:space="preserve">
+    <value>Esegui su</value>
+  </data>
+  <data name="Format" xml:space="preserve">
+    <value>Formato</value>
   </data>
   <data name="hits" xml:space="preserve">
     <value>hit</value>
