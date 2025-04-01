@@ -38,6 +38,7 @@ public class ConfigController : ApiController
     private readonly OpenBulletSettingsService _obSettingsService;
     private readonly LoliCodeAutocompletionService _loliCodeAutocompletionService;
     private readonly ConfigDebuggerService _configDebuggerService;
+    private readonly ConfigRunnerService _configRunnerService;
     private readonly PluginRepository _pluginRepository;
     private readonly HttpClient _httpClient;
 
@@ -48,6 +49,7 @@ public class ConfigController : ApiController
         OpenBulletSettingsService obSettingsService,
         LoliCodeAutocompletionService loliCodeAutocompletionService,
         ConfigDebuggerService configDebuggerService,
+        ConfigRunnerService configRunnerService,
         ILogger<ConfigController> logger)
     {
         _configRepo = configRepo;
@@ -58,7 +60,15 @@ public class ConfigController : ApiController
         _obSettingsService = obSettingsService;
         _loliCodeAutocompletionService = loliCodeAutocompletionService;
         _configDebuggerService = configDebuggerService;
+        _configRunnerService = configRunnerService;
         _logger = logger;
+    }
+
+    [HttpPost("run")]
+    [MapToApiVersion("1.0")]
+    public async Task<ActionResult<ConfigRunResultDto>> RunConfigAsync([FromBody] RunConfigDto dto)
+    {
+        return await _configRunnerService.RunConfigAsync(dto);
     }
 
     /// <summary>

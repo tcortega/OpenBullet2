@@ -169,6 +169,7 @@ builder.Services.AddSingleton<IJobLogger>(service =>
     new FileJobLogger(service.GetService<RuriLibSettingsService>(),
         $"{Globals.UserDataFolder}/Logs/Jobs"));
 builder.Services.AddSingleton<ConfigDebuggerService>();
+builder.Services.AddSingleton<ConfigRunnerService>();
 builder.Services.AddSingleton<ProxyCheckJobService>();
 builder.Services.AddSingleton<MultiRunJobService>();
 builder.Services.AddSingleton<LoliCodeAutocompletionService>();
