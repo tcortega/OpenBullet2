@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Dynamic;
@@ -9,6 +10,7 @@ using System.Threading.Tasks;
 using IronPython.Compiler;
 using IronPython.Hosting;
 using IronPython.Runtime;
+using Microsoft.CodeAnalysis.Scripting;
 using Microsoft.Extensions.Logging;
 using RuriLib.Exceptions;
 using RuriLib.Helpers.Blocks;
@@ -38,11 +40,12 @@ public class ConfigRunner(Config config, RunnerOptions options)
     public PluginRepository PluginRepo { get; set; } = null!;
     public Config Config { get; init; } = config;
     public RunnerOptions Options { get; init; } = options;
+    private static ConcurrentDictionary<string, Script> _cachedScripts = new();
 
     public async Task<RunnerResult> RunAsync()
     {
         // Build the C# script if in Stack or LoliCode mode
-        if (Config.Mode is ConfigMode.Stack or ConfigMode.LoliCode)
+        if (Config.Mode is ConfigMode.Stack or ConfigMode.LoliCode && string.IsNullOrWhiteSpace(config.CSharpScript))
         {
             Config.CSharpScript = Config.Mode == ConfigMode.Stack
                 ? Stack2CSharpTranspiler.Transpile(Config.Stack, Config.Settings)
@@ -90,11 +93,19 @@ public class ConfigRunner(Config config, RunnerOptions options)
 
         dynamic globals = new ExpandoObject();
 
-        var script = new ScriptBuilder()
-            .Build(Config.CSharpScript, Config.Settings.ScriptSettings, PluginRepo);
-
-        var startupScript =
-            new ScriptBuilder().Build(Config.StartupCSharpScript, Config.Settings.ScriptSettings, PluginRepo);
+        if (!_cachedScripts.TryGetValue(Config.Id, out var script))
+        {
+            script = new ScriptBuilder()
+                .Build(Config.CSharpScript, Config.Settings.ScriptSettings, PluginRepo);
+            _cachedScripts.TryAdd(Config.Id, script);
+        }
+        
+        var startupScriptId = $"startup-{Config.Id}";
+        if (!_cachedScripts.TryGetValue(startupScriptId, out var startupScript))
+        {
+            startupScript = new ScriptBuilder().Build(Config.StartupCSharpScript, Config.Settings.ScriptSettings, PluginRepo);
+            _cachedScripts.TryAdd(startupScriptId, startupScript);
+        }
 
         // Initialize resources
         Dictionary<string, ConfigResource> resources = new();
